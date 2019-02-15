@@ -1,2 +1,2 @@
-./docker/db/data
-./vscode
+docker/db/data/
+.vscode/

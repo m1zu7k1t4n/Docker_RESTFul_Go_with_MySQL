@@ -21,7 +21,11 @@ services:
   python:
     image: python:3.7.2
     container_name: python_host
+    working_dir: '/usr/local/src/python'
+    tty: true
+    ports:
+      - 8080:8080
     volumes:
-      - ./docker/python/src:/usr/local/src/python
+      - ./docker/python:/usr/local/src/python
     links:
       - db
