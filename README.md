@@ -1,4 +1,4 @@
-# Docker on MySQL and Some Connector Client
+# Docker on MySQL and Connector Client Application
 
 MySQLとその他の言語を組み合わせてデータベースを用いた環境を構築する
 
