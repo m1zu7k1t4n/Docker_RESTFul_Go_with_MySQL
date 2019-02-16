@@ -1,6 +1,6 @@
-# Docker on MySQL and Connector Client Application
+# Docker on RESTFul Go with MySQL
 
-MySQLとその他の言語を組み合わせてデータベースを用いた環境を構築する
+Docker上でRESTFulなGoサーバーを立ち上げるハンズオン
 
 ## Commands
 
