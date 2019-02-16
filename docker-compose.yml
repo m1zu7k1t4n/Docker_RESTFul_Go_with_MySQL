@@ -18,17 +18,17 @@ services:
       - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
       - ./docker/db/init:/docker-entrypoint-initdb.d
 
-  # python:
-  #   image: python:3.7.2-alpine
-  #   container_name: python_host
-  #   working_dir: '/usr/local/src/python'
-  #   tty: true
-  #   ports:
-  #     - 8080:8080
-  #   volumes:
-  #     - ./docker/python:/usr/local/src/python
-  #   links:
-  #     - db
+  python:
+    image: python:3.7.2-alpine
+    container_name: python_host
+    working_dir: '/usr/local/src/python'
+    tty: true
+    ports:
+      - 8080:8080
+    volumes:
+      - ./docker/python:/usr/local/src/python
+    links:
+      - db
 
   # golang:
   #   image: golang:1.11-alpine
