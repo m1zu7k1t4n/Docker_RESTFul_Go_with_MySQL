@@ -1,125 +1,146 @@
 package main
 
 import (
-  "database/sql"
-  "fmt"
+	"net/http"
+	"strconv"
 
-  _ "github.com/go-sql-driver/mysql"
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
+var db *gorm.DB
+
+func init() {
+	//open a db connection
+	var err error
+	db, err = gorm.Open("mysql", "test:test@tcp(mysql_host:3306)/")
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	//Migrate the schema
+	db.AutoMigrate(&todoModel{})
+}
+
 func main() {
-	// Open("mysql","user:password@protocol(host:port)/dbname")
-  db, err := sql.Open("mysql", "test:test@tcp(mysql_host:3306)/test")
-  if err != nil {
-    panic(err.Error())
-  }
-  defer db.Close() // 関数がリターンする直前に呼び出される
 
-  // ***************************
-  // create table (DDL)
-  // ***************************
+	router := gin.Default()
 
-  _, err = db.Exec(`
-    CREATE TABLE IF NOT EXISTS user(
-      id INT PRIMARY KEY AUTO_INCREMENT,
-      name VARCHAR(100),
-      address VARCHAR(1000),
-      created_at TIMESTAMP NOT NULL default current_timestamp,
-      updated_at TIMESTAMP NOT NULL default current_timestamp on update current_timestamp
-    );
-  `)
-  if err != nil {
-    panic(err.Error())
-  }
+	v1 := router.Group("/api/v1/todos")
+	{
+		v1.POST("/", createTodo)
+		v1.GET("/", fetchAllTodo)
+		v1.GET("/:id", fetchSingleTodo)
+		v1.PUT("/:id", updateTodo)
+		v1.DELETE("/:id", deleteTodo)
+	}
+	router.Run(":8080")
 
-  // ***************************
-  // test database insert
-  // ***************************
-  _, err = db.Exec(`
-    INSERT INTO user(name, address) VALUES('takashi', 'nihon-1-1-1')
-  `)
-  if err != nil {
-    panic(err.Error())
-  }
+}
 
+type (
+	// todoModel describes a todoModel type
+	todoModel struct {
+		gorm.Model
+		Title     string `json:"title"`
+		Completed int    `json:"completed"`
+	}
 
-  // ***************************
-  // test database select
-  // ***************************
-  rows, err := db.Query("SELECT * FROM tasks;") //
-  if err != nil {
-    panic(err.Error())
-  }
+	// transformedTodo represents a formatted todo
+	transformedTodo struct {
+		ID        uint   `json:"id"`
+		Title     string `json:"title"`
+		Completed bool   `json:"completed"`
+	}
+)
 
-  columns, err := rows.Columns() // カラム名を取得
-  if err != nil {
-    panic(err.Error())
-  }
+// createTodo add a new todo
+func createTodo(c *gin.Context) {
+	completed, _ := strconv.Atoi(c.PostForm("completed"))
+	todo := todoModel{Title: c.PostForm("title"), Completed: completed}
+	db.Save(&todo)
+	c.JSON(http.StatusCreated, gin.H{"status": http.StatusCreated, "message": "Todo item created successfully!", "resourceId": todo.ID})
+}
 
-  values := make([]sql.RawBytes, len(columns))
+// fetchAllTodo fetch all todos
+func fetchAllTodo(c *gin.Context) {
+	var todos []todoModel
+	var _todos []transformedTodo
 
-  //  rows.Scan は引数に `[]interface{}`が必要.
+	db.Find(&todos)
 
-  scanArgs := make([]interface{}, len(values))
-  for i := range values {
-    scanArgs[i] = &values[i]
-  }
+	if len(todos) <= 0 {
+		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message": "No todo found!"})
+		return
+	}
 
-  for rows.Next() {
-    err = rows.Scan(scanArgs...)
-    if err != nil {
-      panic(err.Error())
-    }
+	//transforms the todos for building a good response
+	for _, item := range todos {
+		completed := false
+		if item.Completed == 1 {
+			completed = true
+		} else {
+			completed = false
+		}
+		_todos = append(_todos, transformedTodo{ID: item.ID, Title: item.Title, Completed: completed})
+	}
+	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data": _todos})
+}
 
-    var value string
-    for i, col := range values {
-      // Here we can check if the value is nil (NULL value)
-      if col == nil {
-        value = "NULL"
-      } else {
-        value = string(col)
-      }
-      fmt.Println(columns[i], ": ", value)
-    }
-    fmt.Println("-----------------------------------")
-  }
+// fetchSingleTodo fetch a single todo
+func fetchSingleTodo(c *gin.Context) {
+	var todo todoModel
+	todoID := c.Param("id")
 
-  rows, err = db.Query("SELECT * FROM user;") //
-  if err != nil {
-    panic(err.Error())
-  }
+	db.First(&todo, todoID)
 
-  columns, err = rows.Columns() // カラム名を取得
-  if err != nil {
-    panic(err.Error())
-  }
+	if todo.ID == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message": "No todo found!"})
+		return
+	}
 
-  values = make([]sql.RawBytes, len(columns))
+	completed := false
+	if todo.Completed == 1 {
+		completed = true
+	} else {
+		completed = false
+	}
 
-  //  rows.Scan は引数に `[]interface{}`が必要.
+	_todo := transformedTodo{ID: todo.ID, Title: todo.Title, Completed: completed}
+	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data": _todo})
+}
 
-  scanArgs = make([]interface{}, len(values))
-  for i := range values {
-    scanArgs[i] = &values[i]
-  }
+// updateTodo update a todo
+func updateTodo(c *gin.Context) {
+	var todo todoModel
+	todoID := c.Param("id")
 
-  for rows.Next() {
-    err = rows.Scan(scanArgs...)
-    if err != nil {
-      panic(err.Error())
-    }
+	db.First(&todo, todoID)
 
-    var value string
-    for i, col := range values {
-      // Here we can check if the value is nil (NULL value)
-      if col == nil {
-        value = "NULL"
-      } else {
-        value = string(col)
-      }
-      fmt.Println(columns[i], ": ", value)
-    }
-    fmt.Println("-----------------------------------")
-  }
+	if todo.ID == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message": "No todo found!"})
+		return
+	}
 
+	db.Model(&todo).Update("title", c.PostForm("title"))
+	completed, _ := strconv.Atoi(c.PostForm("completed"))
+	db.Model(&todo).Update("completed", completed)
+	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "message": "Todo updated successfully!"})
+}
+
+// deleteTodo remove a todo
+func deleteTodo(c *gin.Context) {
+	var todo todoModel
+	todoID := c.Param("id")
+
+	db.First(&todo, todoID)
+
+	if todo.ID == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message": "No todo found!"})
+		return
+	}
+
+	db.Delete(&todo)
+	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "message": "Todo deleted successfully!"})
 }
