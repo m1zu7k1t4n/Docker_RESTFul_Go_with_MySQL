@@ -14,9 +14,9 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - ./docker/db/data:/var/lib/mysql
-      - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
-      - ./docker/db/init:/docker-entrypoint-initdb.d
+      - ./docker/db/data:/var/lib/mysql:delegated
+      - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf:delegated
+      - ./docker/db/init:/docker-entrypoint-initdb.d:consistent
 
   python:
     image: python:3.7.2-alpine
@@ -26,7 +26,7 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ./docker/python:/usr/local/src/python
+      - ./docker/python:/usr/local/src/python:consistent
     links:
       - db
 
@@ -38,6 +38,6 @@ services:
   #   ports:
   #     - 8081:8081
   #   volumes:
-  #     - ./docker/golang:/usr/local/src/golang
+  #     - ./docker/golang:/usr/local/src/golang:consistent
   #   links:
   #     - db
