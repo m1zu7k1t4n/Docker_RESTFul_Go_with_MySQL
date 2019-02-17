@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"strconv"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -14,10 +15,12 @@ var db *gorm.DB
 func init() {
 	//open a db connection
 	var err error
-	db, err = gorm.Open("mysql", "test:test@tcp(mysql_host:3306)/")
+	db, err = gorm.Open("mysql", "test:test@tcp(mysql_host:3306)/demo")
 	if err != nil {
 		panic("failed to connect database")
 	}
+
+	db.LogMode(true)
 
 	//Migrate the schema
 	db.AutoMigrate(&todoModel{})
@@ -36,7 +39,6 @@ func main() {
 		v1.DELETE("/:id", deleteTodo)
 	}
 	router.Run(":8080")
-
 }
 
 type (
@@ -65,11 +67,12 @@ func createTodo(c *gin.Context) {
 
 // fetchAllTodo fetch all todos
 func fetchAllTodo(c *gin.Context) {
+	// var todos []todoModel
 	var todos []todoModel
 	var _todos []transformedTodo
 
 	db.Find(&todos)
-
+	fmt.Println(todos)
 	if len(todos) <= 0 {
 		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message": "No todo found!"})
 		return
@@ -92,9 +95,8 @@ func fetchAllTodo(c *gin.Context) {
 func fetchSingleTodo(c *gin.Context) {
 	var todo todoModel
 	todoID := c.Param("id")
-
 	db.First(&todo, todoID)
-
+	fmt.Println(todo)
 	if todo.ID == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message": "No todo found!"})
 		return
