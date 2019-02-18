@@ -15,7 +15,7 @@ var db *gorm.DB
 func init() {
 	//open a db connection
 	var err error
-	db, err = gorm.Open("mysql", "test:test@tcp(mysql_host:3306)/demo")
+	db, err = gorm.Open("mysql", "test:test@tcp(mysql_host:3306)/demo?parseTime=true")
 	if err != nil {
 		panic("failed to connect database")
 	}
@@ -61,13 +61,12 @@ type (
 func createTodo(c *gin.Context) {
 	completed, _ := strconv.Atoi(c.PostForm("completed"))
 	todo := todoModel{Title: c.PostForm("title"), Completed: completed}
-	db.Save(&todo)
+	db.Create(&todo)
 	c.JSON(http.StatusCreated, gin.H{"status": http.StatusCreated, "message": "Todo item created successfully!", "resourceId": todo.ID})
 }
 
 // fetchAllTodo fetch all todos
 func fetchAllTodo(c *gin.Context) {
-	// var todos []todoModel
 	var todos []todoModel
 	var _todos []transformedTodo
 
