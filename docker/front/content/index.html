@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Front Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/6.3.1/css/foundation.min.css">
+</head>
+<body>
+  <div class="container" id="app">
+
+    <h3 class="text-center">RESTFul Golang</h3>
+
+    <div class="columns medium-4" v-for="result in results">
+      <div class="card">
+        <div class="card-divider">
+          {{ result.id }}:{{ result.title }}
+        </div>
+        <div class="card-section">
+          <p>{{ result.body }}.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="https://unpkg.com/vue"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

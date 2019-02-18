@@ -30,3 +30,13 @@ services:
       - ./docker/golang/src:/usr/local/src:consistent
     links:
       - db
+  front:
+    image: nginx:1.15-alpine
+    container_name: front_host
+    ports:
+      - 5500:80
+    volumes:
+      - ./docker/front/content:/usr/share/nginx/html
+    links:
+      - golang
+

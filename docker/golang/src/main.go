@@ -2,9 +2,8 @@ package main
 
 import (
 	"net/http"
-	"strconv"
-	"fmt"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -29,6 +28,7 @@ func init() {
 func main() {
 
 	router := gin.Default()
+	router.Use(cors.Default())
 
 	v1 := router.Group("/api/v1/todos")
 	{
@@ -46,21 +46,20 @@ type (
 	todoModel struct {
 		gorm.Model
 		Title     string `json:"title"`
-		Completed int    `json:"completed"`
+		Body 			string `json:"body"`
 	}
 
 	// transformedTodo represents a formatted todo
 	transformedTodo struct {
 		ID        uint   `json:"id"`
 		Title     string `json:"title"`
-		Completed bool   `json:"completed"`
+		Body 			string `json:"body"`
 	}
 )
 
 // createTodo add a new todo
 func createTodo(c *gin.Context) {
-	completed, _ := strconv.Atoi(c.PostForm("completed"))
-	todo := todoModel{Title: c.PostForm("title"), Completed: completed}
+	todo := todoModel{Title: c.PostForm("title"), Body: c.PostForm("body")}
 	db.Create(&todo)
 	c.JSON(http.StatusCreated, gin.H{"status": http.StatusCreated, "message": "Todo item created successfully!", "resourceId": todo.ID})
 }
@@ -71,7 +70,6 @@ func fetchAllTodo(c *gin.Context) {
 	var _todos []transformedTodo
 
 	db.Find(&todos)
-	fmt.Println(todos)
 	if len(todos) <= 0 {
 		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message": "No todo found!"})
 		return
@@ -79,13 +77,7 @@ func fetchAllTodo(c *gin.Context) {
 
 	//transforms the todos for building a good response
 	for _, item := range todos {
-		completed := false
-		if item.Completed == 1 {
-			completed = true
-		} else {
-			completed = false
-		}
-		_todos = append(_todos, transformedTodo{ID: item.ID, Title: item.Title, Completed: completed})
+		_todos = append(_todos, transformedTodo{ID: item.ID, Title: item.Title, Body: item.Body})
 	}
 	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data": _todos})
 }
@@ -95,20 +87,12 @@ func fetchSingleTodo(c *gin.Context) {
 	var todo todoModel
 	todoID := c.Param("id")
 	db.First(&todo, todoID)
-	fmt.Println(todo)
 	if todo.ID == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"status": http.StatusNotFound, "message": "No todo found!"})
 		return
 	}
 
-	completed := false
-	if todo.Completed == 1 {
-		completed = true
-	} else {
-		completed = false
-	}
-
-	_todo := transformedTodo{ID: todo.ID, Title: todo.Title, Completed: completed}
+	_todo := transformedTodo{ID: todo.ID, Title: todo.Title, Body: todo.Body}
 	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "data": _todo})
 }
 
@@ -125,8 +109,7 @@ func updateTodo(c *gin.Context) {
 	}
 
 	db.Model(&todo).Update("title", c.PostForm("title"))
-	completed, _ := strconv.Atoi(c.PostForm("completed"))
-	db.Model(&todo).Update("completed", completed)
+	db.Model(&todo).Update("body", c.PostForm("body"))
 	c.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "message": "Todo updated successfully!"})
 }
 
