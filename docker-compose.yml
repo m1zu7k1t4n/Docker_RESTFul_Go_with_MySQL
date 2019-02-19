@@ -17,6 +17,7 @@ services:
       - ./docker/db/data:/var/lib/mysql:delegated
       - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf:delegated
       - ./docker/db/init:/docker-entrypoint-initdb.d:consistent
+    command: --innodb-use-native-aio=0
 
   golang:
     build: ./docker/golang/
@@ -30,6 +31,7 @@ services:
       - ./docker/golang/src:/usr/local/src:consistent
     links:
       - db
+
   front:
     image: nginx:1.15-alpine
     container_name: front_host
@@ -37,6 +39,6 @@ services:
       - 5500:80
     volumes:
       - ./docker/front/content:/usr/share/nginx/html
-    links:
+    depends_on:
       - golang
 
