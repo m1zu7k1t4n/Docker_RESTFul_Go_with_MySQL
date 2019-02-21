@@ -2,6 +2,12 @@
 
 Docker上でRESTFulなGoサーバーを立ち上げるハンズオン
 
+## 遊び方
+
+こちらのリポジトリの遊び方をQiitaに記事にしてあります
+
+`https://qiita.com/m1zu7k1t4n/items/f3625e96cf43abaac55f`
+
 ## Commands
 
 起動
