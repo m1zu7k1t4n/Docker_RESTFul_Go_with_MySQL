@@ -4,7 +4,7 @@ const vm = new Vue({
     results: []
   },
   mounted() {
-    axios.get("http://localhost:8080/api/v1/todos/")
+    axios.get("http://golang_host:8080/api/v1/todos/")
       .then(response => { this.results = response.data.data })
   }
 });
