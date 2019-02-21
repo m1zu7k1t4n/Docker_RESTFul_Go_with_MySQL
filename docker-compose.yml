@@ -39,6 +39,6 @@ services:
       - 5500:80
     volumes:
       - ./docker/front/content:/usr/share/nginx/html
-    depends_on:
+    links:
       - golang
 
